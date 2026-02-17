@@ -3,11 +3,7 @@ project(astra_camera)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -fPIC -g")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -O3")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -g")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif ()
@@ -24,11 +20,10 @@ find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(camera_info_manager REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(glog REQUIRED)
+find_package(glog CONFIG REQUIRED)
 find_package(image_geometry REQUIRED)
 find_package(image_publisher REQUIRED)
 find_package(image_transport REQUIRED)
-find_package(libuvc REQUIRED)
 find_package(magic_enum REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -111,6 +106,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${OpenCV_INCLUDED_DIRS}
+  ${LIBUVC_INCLUDE_DIRS}
   )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -119,12 +115,16 @@ ament_target_dependencies(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBS}
   Eigen3::Eigen
-  glog
+  glog::glog
   ${magic_enum_LIBRARIES}
-  uvc
+  ${LIBUVC_LIBRARIES}
   -lOpenNI2
   -L${ORBBEC_OPENNI2_REDIST}
   )
+
+target_link_directories(${PROJECT_NAME} PRIVATE
+  ${LIBUVC_LIBRARY_DIRS}
+)
 
 add_executable(list_devices_node
   src/list_devices_node.cpp
@@ -134,6 +134,7 @@ target_include_directories(list_devices_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${OpenCV_INCLUDED_DIRS}
+  ${LIBUVC_INCLUDE_DIRS}
   )
 
 ament_target_dependencies(list_devices_node
@@ -142,13 +143,17 @@ ament_target_dependencies(list_devices_node
 target_link_libraries(list_devices_node
   ${OpenCV_LIBS}
   Eigen3::Eigen
-  glog
+  glog::glog
   ${magic_enum_LIBRARIES}
-  uvc
+  ${LIBUVC_LIBRARIES}
   -lOpenNI2
   -L${ORBBEC_OPENNI2_REDIST}
   ${PROJECT_NAME}
   )
+
+target_link_directories(list_devices_node PRIVATE
+  ${LIBUVC_LIBRARY_DIRS}
+)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "COMPOSITION_BUILDING_DLL")
 
